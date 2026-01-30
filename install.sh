@@ -78,6 +78,7 @@ opkg install \
     luci-app-attendedsysupgrade \
     openssh-sftp-server \
     ca-certificates \
+    fish \
     btop \
     git \
     nano \
