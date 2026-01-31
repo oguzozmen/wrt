@@ -69,7 +69,6 @@ echo "${YELLOW}[i] Ana paketler yükleniyor...${NC}"
 opkg install \
     luci-app-https-dns-proxy \
     luci-compat \
-    luci-ssl-openssl \
     luci-app-adblock \
     luci-app-sqm \
     luci-app-banip \
