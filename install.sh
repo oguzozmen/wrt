@@ -8,64 +8,73 @@ echo "OpenWRT Otomatik Kurulum ve Restore Scripti"
 echo "================================================"
 echo ""
 
-# Renk kodları
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
 # Hata kontrolü fonksiyonu
 check_error() {
     if [ $? -eq 0 ]; then
-        echo "${GREEN}[✓] $1 başarılı${NC}"
+        echo "[✓] $1 başarılı"
         return 0
     else
-        echo "${RED}[✗] $1 başarısız!${NC}"
+        echo "[✗] $1 başarısız!"
         exit 1
     fi
 }
 
-# Paket kontrolü fonksiyonu
-check_package() {
-    which $1 > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        echo "${GREEN}[✓] $1 paketi mevcut${NC}"
-        return 0
-    else
-        echo "${RED}[✗] $1 paketi bulunamadı!${NC}"
-        return 1
-    fi
+# Devam fonksiyonu
+confirm_continue() {
+    echo ""
+    echo "----------------------------------------"
+    echo "$1"
+    echo "Devam etmek için Enter tuşuna basın..."
+    read dummy
 }
 
 # wget ve unzip kontrolü
-echo "${BLUE}[i] Gerekli paketler kontrol ediliyor...${NC}"
-check_package "wget" || exit 1
-check_package "unzip" || exit 1
+echo "[i] Gerekli paketler kontrol ediliyor..."
+which wget > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "[✗] wget paketi bulunamadı!"
+    exit 1
+fi
+echo "[✓] wget paketi mevcut"
+
+which unzip > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "[✗] unzip paketi bulunamadı!"
+    exit 1
+fi
+echo "[✓] unzip paketi mevcut"
+
+confirm_continue "Paket kontrolleri tamamlandı"
 
 # İnternet bağlantısı kontrolü
 echo ""
-echo "${YELLOW}[i] İnternet bağlantısı kontrol ediliyor...${NC}"
+echo "[i] İnternet bağlantısı kontrol ediliyor..."
 ping -c 2 8.8.8.8 > /dev/null 2>&1
 check_error "İnternet bağlantısı"
 
+confirm_continue "İnternet bağlantısı kontrolü tamamlandı"
+
 # Çalışma dizinini temizle ve oluştur
 echo ""
-echo "${YELLOW}[i] Çalışma dizini hazırlanıyor...${NC}"
+echo "[i] Çalışma dizini hazırlanıyor..."
 rm -rf /tmp/install
 mkdir -p /tmp/install
 cd /tmp/install
 check_error "Çalışma dizini oluşturma"
 
+confirm_continue "Çalışma dizini hazırlandı"
+
 # Paket listesini güncelle
 echo ""
-echo "${YELLOW}[i] Paket listeleri güncelleniyor...${NC}"
+echo "[i] Paket listeleri güncelleniyor..."
 opkg update
 check_error "Paket listesi güncellemesi"
 
+confirm_continue "Paket listeleri güncellendi"
+
 # Ana paketleri yükle
 echo ""
-echo "${YELLOW}[i] Ana paketler yükleniyor...${NC}"
+echo "[i] Ana paketler yükleniyor..."
 opkg install \
     luci-app-https-dns-proxy \
     luci-compat \
@@ -85,65 +94,73 @@ opkg install \
     zerotier
 check_error "Ana paketlerin yüklenmesi"
 
+confirm_continue "Ana paketler yüklendi"
+
 # GitHub deposundan dosyaları indir
 echo ""
-echo "${YELLOW}[i] Kurulum dosyaları indiriliyor...${NC}"
+echo "[i] Kurulum dosyaları indiriliyor..."
 wget -O /tmp/install/wrt-main.zip https://github.com/oguzozmen/wrt/archive/refs/heads/main.zip
 check_error "Kurulum dosyalarının indirilmesi"
 
+confirm_continue "Kurulum dosyaları indirildi"
+
 # Arşivi aç
 echo ""
-echo "${YELLOW}[i] Arşiv dosyası açılıyor...${NC}"
+echo "[i] Arşiv dosyası açılıyor..."
 unzip -q /tmp/install/wrt-main.zip -d /tmp/install/
 check_error "Arşiv dosyasının açılması"
 
 # Ana dizini bul
 WRT_DIR="/tmp/install/wrt-main"
 if [ ! -d "$WRT_DIR" ]; then
-    echo "${RED}[✗] wrt-main dizini bulunamadı!${NC}"
+    echo "[✗] wrt-main dizini bulunamadı!"
     exit 1
 fi
 
 cd "$WRT_DIR"
-echo "${GREEN}[✓] Çalışma dizini: $WRT_DIR${NC}"
+echo "[✓] Çalışma dizini: $WRT_DIR"
+
+confirm_continue "Arşiv açma işlemi tamamlandı"
 
 # IPK dosyalarını yükle
 echo ""
-echo "${YELLOW}[i] IPK paketleri yükleniyor...${NC}"
+echo "[i] IPK paketleri yükleniyor..."
 IPK_COUNT=0
 for ipk in *.ipk; do
     if [ -f "$ipk" ]; then
-        echo "${BLUE}  → $ipk yükleniyor...${NC}"
+        echo "  → $ipk yükleniyor..."
         opkg install "$ipk"
         if [ $? -eq 0 ]; then
             IPK_COUNT=$((IPK_COUNT + 1))
-            echo "${GREEN}    ✓ $ipk yüklendi${NC}"
+            echo "    ✓ $ipk yüklendi"
         else
-            echo "${YELLOW}    ! $ipk yüklenemedi (devam ediliyor)${NC}"
+            echo "    ! $ipk yüklenemedi (devam ediliyor)"
         fi
     fi
 done
 
 if [ $IPK_COUNT -gt 0 ]; then
-    echo "${GREEN}[✓] Toplam $IPK_COUNT IPK paketi yüklendi${NC}"
+    echo "[✓] Toplam $IPK_COUNT IPK paketi yüklendi"
     service rpcd reload
 else
-    echo "${YELLOW}[!] Hiç IPK paketi bulunamadı${NC}"
+    echo "[!] Hiç IPK paketi bulunamadı"
 fi
+
+confirm_continue "IPK paket kurulumu tamamlandı"
 
 # Zapret kurulumu
 echo ""
-echo "${YELLOW}[i] Zapret DPI bypass aracı kuruluyor...${NC}"
+echo "[i] Zapret DPI bypass aracı kuruluyor..."
 
 # ZIP dosyasını bul
 ZAPRET_ZIP=$(find "$WRT_DIR" -name "*.zip" -type f | head -n 1)
 
 if [ -z "$ZAPRET_ZIP" ]; then
-    echo "${RED}[✗] Zapret ZIP dosyası bulunamadı!${NC}"
+    echo "[✗] Zapret ZIP dosyası bulunamadı!"
     exit 1
 fi
 
-echo "${BLUE}  → Zapret arşivi: $ZAPRET_ZIP${NC}"
+echo "  → Zapret arşivi: $ZAPRET_ZIP"
 
 # Zapret'i aç
 ZAPRET_EXTRACT_DIR="/tmp/install/zapret_extract"
@@ -155,84 +172,92 @@ check_error "Zapret arşivinin açılması"
 ZAPRET_DIR=$(find "$ZAPRET_EXTRACT_DIR" -maxdepth 2 -type d -name "zapret-v*" | head -n 1)
 
 if [ -z "$ZAPRET_DIR" ]; then
-    echo "${RED}[✗] Zapret kurulum dizini bulunamadı!${NC}"
+    echo "[✗] Zapret kurulum dizini bulunamadı!"
     exit 1
 fi
 
-echo "${GREEN}[✓] Zapret dizini: $ZAPRET_DIR${NC}"
+echo "[✓] Zapret dizini: $ZAPRET_DIR"
 cd "$ZAPRET_DIR"
+
+confirm_continue "Zapret dosyaları hazırlandı"
 
 # Zapret kurulum scriptlerini çalıştır
 echo ""
-echo "${YELLOW}[i] Zapret ön gereksinimler yükleniyor...${NC}"
+echo "[i] Zapret ön gereksinimler yükleniyor..."
 if [ -f "./install_prereq.sh" ]; then
     chmod +x ./install_prereq.sh
     ./install_prereq.sh
     check_error "Zapret ön gereksinimler"
 else
-    echo "${RED}[✗] install_prereq.sh bulunamadı!${NC}"
+    echo "[✗] install_prereq.sh bulunamadı!"
 fi
 
+confirm_continue "Zapret ön gereksinimler yüklendi"
+
 echo ""
-echo "${YELLOW}[i] Zapret binary dosyaları yükleniyor...${NC}"
+echo "[i] Zapret binary dosyaları yükleniyor..."
 if [ -f "./install_bin.sh" ]; then
     chmod +x ./install_bin.sh
     ./install_bin.sh
     check_error "Zapret binary kurulumu"
 else
-    echo "${RED}[✗] install_bin.sh bulunamadı!${NC}"
+    echo "[✗] install_bin.sh bulunamadı!"
 fi
 
-# Zapret parametrelerini göster ve bekle
-echo ""
-echo "================================================"
-echo "${GREEN}ZAPRET DPI BYPASS PARAMETRELERİ${NC}"
-echo "================================================"
-echo ""
-echo "${YELLOW}Aşağıdaki parametreleri kopyalayın (Ctrl+C):${NC}"
-echo ""
-echo "${BLUE}--dpi-desync=fake --dpi-desync-ttl=3${NC}"
-echo ""
-echo "================================================"
-echo ""
-echo "${YELLOW}Parametreleri kopyaladıktan sonra devam etmek için${NC}"
-echo "${YELLOW}herhangi bir tuşa basın...${NC}"
-read -n 1 -s
-echo ""
-echo "${GREEN}[✓] Devam ediliyor...${NC}"
+confirm_continue "Zapret binary dosyaları yüklendi"
 
+# Zapret parametrelerini göster
 echo ""
-echo "${YELLOW}[i] Zapret yapılandırma sihirbazı başlatılıyor...${NC}"
+echo "================================================"
+echo "ZAPRET DPI BYPASS PARAMETRELERİ"
+echo "================================================"
+echo ""
+echo "Aşağıdaki parametreleri kopyalayın (Ctrl+C):"
+echo ""
+echo "--dpi-desync=fake --dpi-desync-ttl=3"
+echo ""
+echo "================================================"
+echo ""
+echo "Parametreleri kopyaladıktan sonra devam etmek için"
+echo "Enter tuşuna basın..."
+read dummy
+
+echo "[i] Zapret yapılandırma sihirbazı başlatılıyor..."
 if [ -f "./install_easy.sh" ]; then
     chmod +x ./install_easy.sh
     ./install_easy.sh
     check_error "Zapret yapılandırma"
 else
-    echo "${RED}[✗] install_easy.sh bulunamadı!${NC}"
+    echo "[✗] install_easy.sh bulunamadı!"
 fi
+
+confirm_continue "Zapret kurulumu tamamlandı"
 
 # Yedek dosyasını bul ve restore et
 echo ""
-echo "${YELLOW}[i] Sistem yedek dosyası aranıyor...${NC}"
+echo "[i] Sistem yedek dosyası aranıyor..."
 cd "$WRT_DIR"
 
 BACKUP_FILE=$(find "$WRT_DIR" -name "*.tar.gz" -type f | head -n 1)
 
 if [ -z "$BACKUP_FILE" ]; then
-    echo "${YELLOW}[!] tar.gz yedek dosyası bulunamadı, restore atlanıyor${NC}"
+    echo "[!] tar.gz yedek dosyası bulunamadı, restore atlanıyor"
+    confirm_continue "Yedek dosyası bulunamadı"
 else
-    echo "${GREEN}[✓] Yedek dosyası bulundu: $BACKUP_FILE${NC}"
+    echo "[✓] Yedek dosyası bulundu: $BACKUP_FILE"
     echo ""
-    echo "${YELLOW}[i] Sistem ayarları geri yükleniyor...${NC}"
+    echo "[i] Sistem ayarları geri yükleniyor..."
     
     # sysupgrade ile restore
     sysupgrade -r "$BACKUP_FILE"
     check_error "Sistem ayarlarının geri yüklenmesi"
+    
+    confirm_continue "Sistem ayarları geri yüklendi"
 fi
 
 # Temizlik
 echo ""
-echo "${YELLOW}[i] Geçici dosyalar temizleniyor...${NC}"
+echo "[i] Geçici dosyalar temizleniyor..."
 cd /tmp
 rm -rf /tmp/install
 check_error "Temizlik işlemi"
@@ -240,7 +265,7 @@ check_error "Temizlik işlemi"
 # Özet bilgi
 echo ""
 echo "================================================"
-echo "${GREEN}Kurulum tamamlandı!${NC}"
+echo "Kurulum tamamlandı!"
 echo "================================================"
 echo ""
 echo "Yüklenen bileşenler:"
@@ -251,9 +276,9 @@ if [ -n "$BACKUP_FILE" ]; then
     echo "  ✓ Sistem ayarları geri yüklendi"
 fi
 echo ""
-echo "${YELLOW}DİKKAT: Değişikliklerin etkinleşmesi için sistemi yeniden başlatın${NC}"
+echo "DİKKAT: Değişikliklerin etkinleşmesi için sistemi yeniden başlatın"
 echo ""
 echo "Yeniden başlatmak için:"
-echo "  ${BLUE}reboot${NC}"
+echo "  reboot"
 echo ""
 echo "================================================"
