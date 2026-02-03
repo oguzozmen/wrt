@@ -29,7 +29,7 @@ REPO_DIR="/tmp/wrt-main"
 CPU_PKG="$REPO_DIR/luci-app-cpu-status-mini_0.2.0-r1_all.ipk"
 ZAPRET_ZIP="$REPO_DIR/zapret-v72.9.zip"
 ZAPRET_DIR="$REPO_DIR/zapret-v72.9"
-BACKUP="$REPO_DIR/backup-OpenWrt-2026-01-31.tar.gz"
+BACKUP="$REPO_DIR/backup-OpenWrt-2026-02-03.tar.gz"
 
 # ─────────────────────────────────────────────
 # FONKSİYONLAR
@@ -75,15 +75,15 @@ fi
 # ─────────────────────────────────────────────
 if [ -f "$ZAPRET_ZIP" ]; then
     log "Zapret unzip yapılıyor..."
-    cd /tmp
+    cd $REPO_DIR
     unzip -o "$ZAPRET_ZIP" || err "Zapret unzip başarısız oldu."
 
     log "Zapret kuruluyur..."
     cd "$ZAPRET_DIR"
 
-    [ -f install_prereq.sh ] && sh install_prereq.sh || warn "install_prereq.sh bulunamadı."
-    [ -f install_bin.sh ]    && sh install_bin.sh    || warn "install_bin.sh bulunamadı."
-    [ -f install_easy.sh ]   && sh install_easy.sh   || warn "install_easy.sh bulunamadı."
+    ./install_prereq.sh || warn "install_prereq.sh bulunamadı."
+    ./install_bin.sh    || warn "install_bin.sh bulunamadı."
+    ./install_easy.sh   || warn "install_easy.sh bulunamadı."
 
     # Gerekirse DPI ayarı için aşağıdaki satırı yorum dışına alabilirsiniz:
     # Flags: --dpi-desync=fake --dpi-desync-ttl=3
