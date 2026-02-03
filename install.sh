@@ -69,4 +69,5 @@ if [ -f "$CPU_PKG" ]; then
 else
     warn "cpu-status-mini paketi bulunamadı: $CPU_PKG"
 fi
+#--dpi-desync=fake --dpi-desync-ttl=3
 
