@@ -8,7 +8,6 @@ set -e
 # DEĞIŞKENLER
 # ─────────────────────────────────────────────
 PACKAGES="
-    adguardhome
     luci-app-https-dns-proxy
     luci-app-sqm
     luci-app-nlbwmon
