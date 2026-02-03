@@ -8,7 +8,6 @@ set -e
 # DEĞIŞKENLER
 # ─────────────────────────────────────────────
 PACKAGES="
-    luci-app-https-dns-proxy
     luci-app-sqm
     luci-app-nlbwmon
     openssh-sftp-server
