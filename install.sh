@@ -1,12 +1,4 @@
 #!/bin/sh
-# OpenWrt Setup & Install Script
-# Tarih: 2026-01-31
-
-set -e
-
-# ─────────────────────────────────────────────
-# DEĞIŞKENLER
-# ─────────────────────────────────────────────
 PACKAGES="
     luci-app-https-dns-proxy
     luci-app-sqm
@@ -14,7 +6,6 @@ PACKAGES="
     openssh-sftp-server
     ca-certificates
     fish
-    btop
     git
     nano
     gzip
@@ -22,52 +13,13 @@ PACKAGES="
     wget
     unzip
 "
+opkg update 
+opkg install $PACKAGES 
 
-REPO_URL="https://github.com/oguzozmen/wrt/archive/refs/heads/main.zip"
-REPO_ZIP="/tmp/main.zip"
-REPO_DIR="/tmp/wrt-main"
-CPU_PKG="$REPO_DIR/luci-app-cpu-status-mini_0.2.0-r1_all.ipk"
-ZAPRET_ZIP="$REPO_DIR/zapret-v72.9.zip"
-ZAPRET_DIR="$REPO_DIR/zapret-v72.9"
-BACKUP="$REPO_DIR/backup-OpenWrt-2026-02-03.tar.gz"
+wget --no-check-certificate -O /tmp/luci-app-cpu-status-mini_0.2.0-r1_all.ipk https://github.com/gSpotx2f/packages-openwrt/raw/master/24.10/luci-app-cpu-status-mini_0.2.0-r1_all.ipk
+opkg install /tmp/luci-app-cpu-status-mini_0.2.0-r1_all.ipk
+rm /tmp/luci-app-cpu-status-mini_0.2.0-r1_all.ipk
+service rpcd reload
 
-# ─────────────────────────────────────────────
-# FONKSİYONLAR
-# ─────────────────────────────────────────────
-log()    { echo "[+] $1"; }
-warn()   { echo "[!] $1"; }
-err()    { echo "[-] $1"; exit 1; }
-
-# ─────────────────────────────────────────────
-# 1. OPKG UPDATE
-# ─────────────────────────────────────────────
-log "opkg güncelleniyor..."
-opkg update || err "opkg update başarısız oldu."
-
-# ─────────────────────────────────────────────
-# 2. PAKET KURALLARI
-# ─────────────────────────────────────────────
-log "Paketler kurulyor..."
-opkg install $PACKAGES || err "Paket kurulumu başarısız oldu."
-
-# ─────────────────────────────────────────────
-# 3. GITHUB REPO İNDIR & KURULUMU
-# ─────────────────────────────────────────────
-log "GitHub repo indiriliyor..."
-cd /tmp
-wget -q "$REPO_URL" -O "$REPO_ZIP" || err "Repo indirme başarısız oldu."
-
-log "Repo unzip yapılıyor..."
-unzip -o "$REPO_ZIP" || err "Unzip başarısız oldu."
-
-# ─────────────────────────────────────────────
-# 4. LuCI CPU Status Mini Kurulumu
-# ─────────────────────────────────────────────
-if [ -f "$CPU_PKG" ]; then
-    log "luci-app-cpu-status-mini kuruluyur..."
-    opkg install "$CPU_PKG" || err "cpu-status-mini kurulumu başarısız oldu."
-else
-    warn "cpu-status-mini paketi bulunamadı: $CPU_PKG"
-fi
 #--dpi-desync=fake --dpi-desync-ttl=3
 
